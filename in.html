@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body>
+
+<h1>My First Heading</h1>
+<p>My first paragraph.</p>
+
+<script>
+var results = [];
+
+function SearchForDoctors(url, page, hospital) {
+	fetch(url)
+		.then(response => response.json())
+		.then(data => { 
+			//console.log(data);
+			for (let r = 0; r < data["doctor_search"]["results"]["doctors"]["matches"].length; r++) {
+				let doctor = {
+					"name": data["doctor_search"]["results"]["doctors"]["matches"][r]["name_prefix"] 
+						+ data["doctor_search"]["results"]["doctors"]["matches"][r]["full_name"],
+					"blurb": data["doctor_search"]["results"]["doctors"]["matches"][r]["blurb"],
+					"type": data["doctor_search"]["results"]["doctors"]["matches"][r]["doctor_type"],
+					"phone": data["doctor_search"]["results"]["doctors"]["matches"][r]["phone"],
+					"specialty": data["doctor_search"]["results"]["doctors"]["matches"][r]["specialty"],
+					"subspecialties": data["doctor_search"]["results"]["doctors"]["matches"][r]["subspecialties"],
+					"title_list": data["doctor_search"]["results"]["doctors"]["matches"][r]["title_list"]
+				}
+
+				// console.log(data["doctor_search"]["results"]["doctors"]["matches"][r]);
+				// console.log(doctor);
+
+				hospital["doctors"].push(doctor);
+			}
+			if (data["doctor_search"]["results"]["doctors"]["hasNextPage"]) { 
+				let nextPage = page + 1;
+				SearchForDoctors('https://health.usnews.com/best-hospitals/api/doctors?hospital=' + hospital["hospital_id"] + '&page_num=' + nextPage, nextPage, hospital);
+			}
+			else {
+				//results.push(hospital);
+				console.log(hospital);
+			}
+		});
+}
+
+function AddHospital(hospital) {
+	hospital["doctors"] = [];
+	SearchForDoctors('https://health.usnews.com/best-hospitals/api/doctors?hospital=' + hospital["hospital_id"], 1, hospital);
+}
+
+function SearchForHospitals(url, page) {
+	fetch(url)
+		.then(response => response.json())
+		.then(data => { 
+			//console.log(data);
+			for (let r = 0; r < data["matches"].length; r++) {
+				//console.log(data["matches"][r]);
+				AddHospital({
+					"name": data["matches"][r]["name"],
+					"description": data["matches"][r]["description"],
+					"location": data["matches"][r]["location"],
+					"phone": data["matches"][r]["phone"],
+					"hospital_id": data["matches"][r]["hospital_id"],
+					"hospital_url": data["matches"][r]["url"]
+				});
+			}
+			//console.log(results);
+			if (data["hasNextPage"]) { 
+				let nextPage = page + 1;
+				SearchForHospitals('https://health.usnews.com/best-hospitals/search-data?type=pediatric&page=' + nextPage, nextPage);
+			}
+		});
+}
+
+SearchForHospitals('https://health.usnews.com/best-hospitals/search-data?type=pediatric', 1);
+
+
+
+
+</script>
+
+</body>
+</html>
